@@ -155,7 +155,6 @@ const Page = () => {
                 </div>
             ))}
         </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin"></div>
 
             <div className="p-4 border-t border-zinc-800 bg-zinc-900/30">
                 <div className="flex gap-4">
