@@ -4,7 +4,7 @@ import { useUsername } from "@/hooks/use-username";
 import { client } from "@/lib/client";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 
 
 const Page = () => {
@@ -20,6 +20,9 @@ export default Page;
 function Lobby() {
   const { username } = useUsername();
   const router = useRouter();
+  const [view, setView] = useState<"create" | "join">("create");
+  const [roomId, setRoomId] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const searchParams = useSearchParams()
   const wasDestroyed = searchParams.get("destroyed") === "true"
@@ -34,6 +37,11 @@ function Lobby() {
       }
     }
   });
+
+  const handleJoin = (roomId: string) => {
+    setLoading(true);
+    router.push(`/room/${roomId}`);
+  };
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4">
@@ -64,7 +72,7 @@ function Lobby() {
             ROOM NOT FOUND
           </p>
           <p className="text-zinc-500 text-xs mt-1">
-          This room may have expired or never existed
+            This room may have expired or never existed
           </p>
         </div>
         }
@@ -76,22 +84,58 @@ function Lobby() {
         <div className="border border-zinc-800 bg-zinc-900/50 p-6 backdrop-blur-md">
           <div className="space-y-5">
             <div className="space-y-2">
-              <label className="flex items-center text-zinc-500">Your Identity</label>
+              <label className="flex items-center text-zinc-500">{view === "join" ? "Enter room ID" : "Your Identity"}</label>
 
               <div className="flex items-center gap-3">
-                <div className="flex-1 bg-zinc-900 p-3 text-sm text-zinc-400 font-mono">
-                  {username}
-                </div>
+                <input
+                  className="flex-1 bg-zinc-900 p-3 text-sm text-zinc-400 placeholder:text-zinc-400 font-mono outline-none"
+                  disabled={view === "create"} placeholder={view === "join" ? "rapto-1234" : username}
+                  value={roomId}
+                  onChange={(e) => setRoomId(e.target.value)}
+                />
               </div>
             </div>
 
-            <button 
-            className={`w-full bg-zinc-100 text-black p-3 text-sm font-bold transition-colors mt-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`} 
-            onClick={() => createRoom()} 
-            disabled={isPending}
+            <button
+              className={`w-full bg-zinc-100 text-black p-3 text-sm font-bold transition-colors mt-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
+              onClick={() => {
+                if (view === "create") {
+                  createRoom();
+                } else {
+                  handleJoin(roomId)
+                }
+              }}
+              disabled={isPending || loading && !wasDestroyed && !error}
             >
-              {isPending ? "CREATING ROOM..." : "CREATE SECURE ROOM"}
+              {view === "create" ? (isPending ? "CREATING ROOM..." : "CREATE SECURE ROOM") : (
+                loading && !wasDestroyed && !error ? "JOINING..." : "JOIN"
+              )
+              }
             </button>
+
+            {view === "create" && (
+              <span className="text-xs text-center gap-2 flex items-center justify-center">
+                Know of a room already? 
+                <a 
+                className="text-green-500 underline cursor-pointer" 
+                onClick={() => {
+                  setRoomId("");
+                  setView("join");
+                }}>
+                  JOIN ROOM
+                </a>
+              </span>
+            )}
+
+            {view === "join" && (
+              <span className="text-xs text-center gap-2 flex items-center justify-center">
+                <a 
+                className="text-green-500 underline cursor-pointer" 
+                onClick={() => setView("create")}>
+                  GO BACK
+                </a>
+              </span>
+            )}
           </div>
         </div>
       </div>
